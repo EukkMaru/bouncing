@@ -1,0 +1,25 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "build project",
+        "type": "shell",
+        "command": "g++",
+        "args": [
+          "main.cpp",
+          "-o",
+          "output.exe",
+          "-I./include",
+          "-L./lib-mingw-w64",
+          "-lglfw3",
+          "-lopengl32",
+          "-lgdi32"
+        ],
+        "group": {
+          "kind": "build",
+          "isDefault": true
+        }
+      }
+    ]
+  }
+  
