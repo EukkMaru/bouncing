@@ -1,0 +1,1 @@
+g++ main.cpp -o output -I./include -L./lib -lglfw3 -lopengl32 -lgdi32 -luser32 -lshell32

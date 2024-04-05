@@ -1,47 +1,85 @@
+#define GLFW_INCLUDE_GLU
+
+#define GLFW_EXPOSE_NATIVE_WGL
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
-#include <vector>
-
-#define setPos glfwSetWindowPos
-#define Tab GLFWwindow
-
-using namespace std;
-
-void initializeScene();
-void updatePhysics(double deltaTime);
-void checkCollisions();
-void renderScene(GLFWwindow* tab);
-void processInput(GLFWwindow* tab);
-
+#include <GLFW/glfw3native.h>
+#include <Windows.h>
+#include <iostream>
 struct Vec2 {
     float x, y;
+
+    Vec2(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
+
+    Vec2 operator+(const Vec2 &other) const {
+        return Vec2(x + other.x, y + other.y);
+    }
+
+    Vec2 &operator+=(const Vec2 &other) {
+        x += other.x;
+        y += other.y;
+        return *this;
+    }
+
+    Vec2 operator*(float scalar) const {
+        return Vec2(x * scalar, y * scalar);
+    }
+
+    void applyAccel(const Vec2 &acc, float dTime) {
+        x += acc.x * dTime;
+        y += acc.y * dTime;
+    }
 };
 
-Vec2 position = {0, 0};
-Vec2 velocity = {5, -10}; // Example initial velocity
-Vec2 acceleration = {0, 9.8}; // Simulating gravity
-float elasticity = 0.75; // Bounce factor
+#define Tab GLFWwindow
+
+void getScreenSize();
+void setTPos(Tab *tab, int posX, int posY);
+void initializeScene();
+void updatePhysics(double deltaTime);
+void checkTCollisions(Tab *tab, int &posX, int &posY);
+void renderScene(Tab *tab);
+void processInput(Tab *tab);
+double calculateDTime();
+
+Vec2 velocity = {5, -10};
+Vec2 acceleration = {0, 20};
+float elasticity = 0.75;
+int posX = 100, posY = 100;
+int screenWidth, screenHeight, tabWidth, tabHeight;
+double lastTime = 0.0;
 
 int main() {
-    Tab* tab;
-
-    // Initialize GLFW and create tab
     if (!glfwInit()) {
-        // Handle initialization failure
+        return -1;
     }
-    
-    tab = glfwCreateWindow(640, 480, "Physics Simulation", NULL, NULL);
+    getScreenSize();
+
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
+    Tab *tab = glfwCreateWindow(640, 480, "Physics Simulation", NULL, NULL);
     if (!tab) {
         glfwTerminate();
-        // Handle tab creation failure
+        return -1;
     }
 
-    // Main loop
+    glfwMakeContextCurrent(tab);
+    glfwSwapInterval(1);
+    int width, height;
+    glfwGetFramebufferSize(tab, &width, &height);
+    glViewport(0, 0, width, height);
+    HWND hwnd = glfwGetWin32Window(tab);
+
+    glfwGetWindowSize(tab, &tabWidth, &tabHeight);
+
+    setTPos(tab, posX, posY);
+
     while (!glfwWindowShouldClose(tab)) {
-        double deltaTime = calculateDeltaTime(); // Implement this based on your needs
-        
+        double deltaTime = calculateDTime();
+
         processInput(tab);
         updatePhysics(deltaTime);
-        checkCollisions();
+        checkTCollisions(tab, posX, posY);
         renderScene(tab);
 
         glfwSwapBuffers(tab);
@@ -52,27 +90,73 @@ int main() {
     return 0;
 }
 
-void initializeScene() {
-    // Setup initial scene conditions, if any
+void getScreenSize() {
+    GLFWmonitor *primaryMonitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode *mode = glfwGetVideoMode(primaryMonitor);
+
+    if (mode != NULL) {
+        screenWidth = mode->width;
+        screenHeight = mode->height;
+    }
 }
 
 void updatePhysics(double deltaTime) {
-    velocity.x += acceleration.x * deltaTime;
-    velocity.y += acceleration.y * deltaTime;
-    
-    position.x += velocity.x * deltaTime;
-    position.y += velocity.y * deltaTime;
+    velocity.applyAccel(acceleration, deltaTime);
+
+    posX += static_cast<int>(velocity.x * deltaTime);
+    posY += static_cast<int>(velocity.y * deltaTime);
+
+    std::cout << "Velocity: (" << velocity.x << ", " << velocity.y << "), Pos: (" << posX << ", " << posY << ")\n";
+    std::cout << "Delta Time: " << deltaTime << ", PosX: " << posX << ", PosY: " << posY << std::endl;
 }
 
-void checkCollisions() {
-    // Check and respond to collisions with screen edges
-    // Upon collision, adjust velocity accordingly
+void checkTCollisions(Tab *tab, int &posX, int &posY) {
+    bool collided = false;
+
+    if (posX < 0) {
+        posX = 0;
+        velocity.x = -velocity.x * elasticity;
+        collided = true;
+    } else if (posX > screenWidth - tabWidth) {
+        posX = screenWidth - tabWidth;
+        velocity.x = -velocity.x * elasticity;
+        collided = true;
+    }
+
+    if (posY < 0) {
+        posY = 0;
+        velocity.y = -velocity.y * elasticity;
+        collided = true;
+    } else if (posY > screenHeight - tabHeight) {
+        posY = screenHeight - tabHeight;
+        velocity.y = -velocity.y * elasticity;
+        collided = true;
+    }
+
+    if (collided) {
+
+        setTPos(tab, posX, posY);
+    }
 }
 
-void renderScene(Tab* tab) {
-    // Render your scene here. For the joke, this might not change.
+void renderScene(Tab *tab) {
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
-void processInput(Tab* tab) {
-    // Handle user input. For example, close the program or reset simulation.
+void processInput(Tab *tab) {
+    if (glfwGetKey(tab, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(tab, true);
+}
+
+double calculateDTime() {
+    double currentTime = glfwGetTime();
+    double deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+    return deltaTime;
+}
+
+void setTPos(Tab *tab, int posX, int posY) {
+    HWND hwnd = glfwGetWin32Window(tab);
+    SetWindowPos(hwnd, NULL, posX, posY, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 }
