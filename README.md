@@ -1,2 +1,2 @@
 # OpenGL with GLFW
-lol
+(./README-GLFW.md)
