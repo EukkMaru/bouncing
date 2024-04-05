@@ -1,8 +1,2 @@
-# INSTALL GLFW
-# INSTALL GLFW
-# INSTALL GLFW
-# INSTALL GLFW
-# INSTALL GLFW
-# INSTALL GLFW
-
-# Install GLFW for fucks sake
+# OpenGL with GLFW
+lol
