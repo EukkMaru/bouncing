@@ -1,35 +1,78 @@
-// #include <GLFW/glfw3.h>
-// Commented out because it would throw an error: "fatal error: GLFW/glfw3.h: No such file or directory"
-
-// #define GLFW_DLL
-// Dynamic Linking
 #include <GLFW/glfw3.h>
-#include <iostream>
+#include <vector>
 
-int main(void) {
-    GLFWwindow *window;
+#define setPos glfwSetWindowPos
+#define Tab GLFWwindow
 
+using namespace std;
+
+void initializeScene();
+void updatePhysics(double deltaTime);
+void checkCollisions();
+void renderScene(GLFWwindow* tab);
+void processInput(GLFWwindow* tab);
+
+struct Vec2 {
+    float x, y;
+};
+
+Vec2 position = {0, 0};
+Vec2 velocity = {5, -10}; // Example initial velocity
+Vec2 acceleration = {0, 9.8}; // Simulating gravity
+float elasticity = 0.75; // Bounce factor
+
+int main() {
+    Tab* tab;
+
+    // Initialize GLFW and create tab
     if (!glfwInit()) {
-        std::cerr << "Failed to initialize GLFW\n";
-        return -1;
+        // Handle initialization failure
     }
-
-    window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
-    if (!window) {
+    
+    tab = glfwCreateWindow(640, 480, "Physics Simulation", NULL, NULL);
+    if (!tab) {
         glfwTerminate();
-        std::cerr << "Failed to create GLFW window\n";
-        return -1;
+        // Handle tab creation failure
     }
 
-    glfwMakeContextCurrent(window);
+    // Main loop
+    while (!glfwWindowShouldClose(tab)) {
+        double deltaTime = calculateDeltaTime(); // Implement this based on your needs
+        
+        processInput(tab);
+        updatePhysics(deltaTime);
+        checkCollisions();
+        renderScene(tab);
 
-    while (!glfwWindowShouldClose(window)) {
-
-        glfwSwapBuffers(window);
-
+        glfwSwapBuffers(tab);
         glfwPollEvents();
     }
 
     glfwTerminate();
     return 0;
+}
+
+void initializeScene() {
+    // Setup initial scene conditions, if any
+}
+
+void updatePhysics(double deltaTime) {
+    velocity.x += acceleration.x * deltaTime;
+    velocity.y += acceleration.y * deltaTime;
+    
+    position.x += velocity.x * deltaTime;
+    position.y += velocity.y * deltaTime;
+}
+
+void checkCollisions() {
+    // Check and respond to collisions with screen edges
+    // Upon collision, adjust velocity accordingly
+}
+
+void renderScene(Tab* tab) {
+    // Render your scene here. For the joke, this might not change.
+}
+
+void processInput(Tab* tab) {
+    // Handle user input. For example, close the program or reset simulation.
 }
